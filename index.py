@@ -1,70 +1,41 @@
 from flask import *
-import random
-#app = Flask(__name__)
-## parte de local server web con flask
+from mastermind import *
 app = Flask(__name__)
-
-colores = {
-    "Yellow": "#ffff00",
-    "Black": "#000000",
-    "Green": "#00ff00",
-    "Red": "#ff0000",
-    "Cyan": "#00ffff",
-    "White": "#ffffff",
-    "Purple": "#ff00ff",
-    "Blue": "#0000ff"}
+## parte de local server web con flask
+app.secret_key = b'MI_CLAVE_SECRETA'
 
 @app.route('/', methods=['GET','POST'])
 def index():
-   # no esta accesible
-   data = {"titulo": "MasterMind"}
-   return render_template('home.html',data=data, colores=colores,intento=intento,intentos_realizados=intentos_realizados)
+ 
+      # Si existen datos en la sesión continúa el juego, si no crea nueva combinación
+   if not 'secreto' in session:
+      session['secreto'] = nuevo_secreto(colores)
 
-# tutorial flask https://www.youtube.com/watch?v=-1DmVCPB6H8&t=333s
+   if request.method == 'POST':
+      intento = request.form.getlist('intento[]')
+      session['intento'] = intento
 
-def nuevo_secreto(colores):
-   secreto = ()
-   
-   for i in range(4):
-      secreto.append(random.choice(list(colores.values())))
+      # Recupera el historico previo de la sesion
+      if not 'historico' in session:
+         historico = []
+      else:
+         historico = session['historico']
+
+      # Añade el resultado actual al historico de turnos
+      historico.append(calcula_historico(intento,session['secreto']))
+      # Almacena el estado del historico en la sesion
+      session['historico'] = historico
       
-   return secreto
+   return render_template('home.html',colores=colores)
 
-def calcula_resultado(intento,secreto):
-   descolocados = 0
-   acertados = 0
-   for i in range(4):
-      if intento[i] == secreto[i]:
-         acertados=acertados+1
-      if intento[i] in secreto:
-         descolocados = descolocados+1
-         
-   return acertados,descolocados
-
-def mastermind():
-   data = {"titulo": "MasterMind"}
-   
-   if 'secreto' not in session:
-      session['secreto']= nuevo_secreto(colores)
-      session['intentos_realizados']=[]
-   intento=[]
-   intentos_realizados=session.get('intentos_realizados',[])
-      
-   if request.method=='POST':
-      intento=request.form.getlist('intento[]')
-      session['intentos']=session.get('intentos',0)+1
-      resultado= calcula_resultado(intento,session['secreto'])
-      intentos_realizados.append((session['intentos'],intento,resultado))
-      session['intentos_realizados']=intentos_realizados
-   
-   return render_template('home.html',data=data, colores=colores,intento=intento,intentos_realizados=intentos_realizados)
-
+@app.post('/reset')
 def reiniciar():
    session.pop('secreto', None)
-   session.pop('intentos', None)
-   session.pop('intentos_realizados', None)
+   session.pop('intento', None)
+   session.pop('historico', None)
+   return redirect(url_for('index'))
    
-   return "Juego reiniciado"
+
 
 if __name__ == '__main__':
    app.run(debug=True,port=5000)

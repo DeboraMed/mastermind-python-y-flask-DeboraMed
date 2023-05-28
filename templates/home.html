@@ -1,39 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>{{data.titulo}}</title>
-    </head>
-    <body>
-        <datalist id="presets">
-            {% for name, color in colores.items() %}
-                <option value="{{ color }}">{{ name }}</option>
-            {% endfor %}
-        </datalist>
+<head>
+    <meta charset="UTF-8">
+    <title>Acierta los colores (MegaMind)</title>
+</head>
+<body>
+    <h2>Acierta los colores (MegaMind)</h2>
+<datalist id="presets">
+    {# Crea lista de colores para desplegable de colores del formulario #}
+    {% for name, color in colores.items() %}
+        <option value='{{color}}'>{{name}}</option>
+    {% endfor %}
+</datalist>
 
-        {% for intento_numero, intento, resultado in intentos_realizados %}
-            <i>Intento número {{ intento_numero }}</i>
-            <form>
-                {{ resultado | safe }}
-            </form>
-            <br>
+<br>
+<div>
+<i>Jugada</i>
+
+<form action="" method="post">
+
+    {% for i in range(4) %}
+        {% if session['intento'] %}
+            <input type='color' list='presets' name='intento[]' value="{{session['intento'][i]}}">
+        {% else %}
+            <input type='color' list='presets' name='intento[]' value=''>
+        {% endif %}
+    {% endfor %}
+    <input type="submit" value="Intentar">
+</form>
+
+</div>
+<div>
+    <form action="/reset" method="post">
+        <input type="submit" value="Reiniciar">
+    </form>
+</div>
+
+{% if session['historico'] %}
+    {#Imprime la lista de historicos en orden inverso (más reciente arriba)#}
+    <div>
+        <h3>Historico</h3>    
+        {% for entrada in session['historico']|reverse %}
+            <h4>Intento {{loop.revindex}} </h4>
+                {{entrada|safe}}
         {% endfor %}
+    </div>
+{% endif %}
 
-        <br>
-        <div>
-        <i>Jugada</i>
-        <br>
-        <form action="/" method="post">
-            {% for i in range(4) %}
-                <input type="color" list="presets" name="intento[]" value="{{ intento[i] if intento else '' }}">
-            {% endfor %}
-            <br>
-            <br>
-            <input type="submit" value="Intentar">
-        </form>
-        <form action="/reiniciar" method="post">
-            <input type="submit" value="Reiniciar">
-        </form>
-        </div>
-    </body>
+</body>
 </html>
